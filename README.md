@@ -60,15 +60,6 @@ plugin : **aucune application développeur à créer**.
 > navigateur (Ctrl + Shift + R) sur la page des paramètres : Emby met la page de
 > configuration en cache de façon agressive.
 
-### Cas Docker / Unraid
-Si le partage `appdata` est monté en **lecture seule**, déposez `Simkl.dll` sur un
-partage inscriptible puis, depuis le terminal Unraid :
-```bash
-cp /mnt/user/<partage>/Simkl.dll /mnt/user/appdata/emby/plugins/ \
-  && chmod 644 /mnt/user/appdata/emby/plugins/Simkl.dll
-```
-puis redémarrez le conteneur Emby.
-
 ---
 
 ## Configuration
