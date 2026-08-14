@@ -1,5 +1,7 @@
 # Simkl pour Emby — édition « parité Trakt »
 
+🇫🇷 Français · [🇬🇧 English](README.en.md)
+
 [![license](https://img.shields.io/github/license/Guiro28/Simkl-Emby.svg?style=flat-square)][license]
 
 Plugin de suivi **Simkl** pour **Emby**. C'est un fork du plugin officiel
