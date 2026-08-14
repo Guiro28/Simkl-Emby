@@ -1,4 +1,4 @@
-# Simkl for Emby — “Trakt parity” edition
+# Simkl for Emby
 
 [🇫🇷 Français](README.md) · 🇬🇧 English
 
