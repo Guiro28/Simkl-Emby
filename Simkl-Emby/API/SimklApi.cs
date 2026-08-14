@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.IO;
-// using System.Threading;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using MediaBrowser.Common.Net;
@@ -23,7 +23,6 @@ namespace Simkl.Api
 
         /* BASIC API THINGS */
         public const string BASE_URL = @"https://api.simkl.com";
-        // public const string BASE_URL = @"http://private-9c39b-simkl.apiary-proxy.com";
 
         public const string REDIRECT_URI = @"https://simkl.com/apps/emby/connected/";
         public const string APIKEY = @"27dd5d6adc24aa1ad9f95ef913244cbaf6df5696036af577ed41670473dc97d0";
@@ -32,7 +31,7 @@ namespace Simkl.Api
         private HttpRequestOptions GetOptions(string userToken = null)
         {
             HttpRequestOptions options = new HttpRequestOptions
-            { 
+            {
                 RequestContentType = "application/json",
                 LogRequest = true,
                 LogRequestAsDebug = true,
@@ -40,11 +39,10 @@ namespace Simkl.Api
                 LogResponseHeaders = true,
                 LogErrorResponseBody = true,
                 EnableDefaultUserAgent = true,
-                TimeoutMs = 30000
+                TimeoutMs = 60000
             };
             options.RequestHeaders.Add("simkl-api-key", APIKEY);
-            // options.RequestHeaders.Add("Content-Type", "application/json");
-            if ( !string.IsNullOrEmpty(userToken) )
+            if (!string.IsNullOrEmpty(userToken))
                 options.RequestHeaders.Add("Authorization", "Bearer " + userToken);
 
             return options;
@@ -57,34 +55,109 @@ namespace Simkl.Api
             _httpClient = httpClient;
         }
 
+        /* ---------------------------------------------------------------- */
+        /*  AUTHENTICATION                                                  */
+        /* ---------------------------------------------------------------- */
         public async Task<CodeResponse> getCode()
         {
-            string uri = String.Format("/oauth/pin?client_id={0}&redirect={1}", APIKEY, REDIRECT_URI);
+            string uri = string.Format("/oauth/pin?client_id={0}&redirect={1}", APIKEY, REDIRECT_URI);
             return _json.DeserializeFromStream<CodeResponse>(await _get(uri));
         }
 
         public async Task<CodeStatusResponse> getCodeStatus(string user_code)
         {
-            string uri = String.Format("/oauth/pin/{0}?client_id={1}", user_code, APIKEY);
+            string uri = string.Format("/oauth/pin/{0}?client_id={1}", user_code, APIKEY);
             return _json.DeserializeFromStream<CodeStatusResponse>(await _get(uri));
         }
 
         public async Task<UserSettings> getUserSettings(string userToken)
         {
-            try { 
+            try
+            {
                 return _json.DeserializeFromStream<UserSettings>(await _post("/users/settings/", userToken));
             }
-            catch (MediaBrowser.Model.Net.HttpException e) when(e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            catch (MediaBrowser.Model.Net.HttpException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                // Wontfix: Custom status codes
-                // "You don't get to pick your response code" - Luke (System Architect of Emby)
-                // https://emby.media/community/index.php?/topic/61889-wiki-issue-resultfactorythrowerror/
                 return new UserSettings() { error = "user_token_failed" };
             }
         }
 
-        public async Task<SearchFileResponse> getFromFile(string filename) {
-            SimklFile f = new SimklFile {file = filename};
+        /* ---------------------------------------------------------------- */
+        /*  REAL-TIME SCROBBLING (start / pause / stop)                     */
+        /* ---------------------------------------------------------------- */
+        private static string ScrobbleUrl(MediaStatus status)
+        {
+            switch (status)
+            {
+                case MediaStatus.Watching: return "/scrobble/start";
+                case MediaStatus.Paused: return "/scrobble/pause";
+                default: return "/scrobble/stop";
+            }
+        }
+
+        /// <summary>Reports movie playback status to Simkl.</summary>
+        public Task<ScrobbleResponse> ScrobbleMovie(SyncMovie movie, double progress, MediaStatus status, string userToken)
+        {
+            var body = new ScrobbleMovieBody { progress = progress, movie = movie };
+            return PostAsync<ScrobbleResponse>(ScrobbleUrl(status), userToken, body);
+        }
+
+        /// <summary>Reports episode playback status to Simkl.</summary>
+        public Task<ScrobbleResponse> ScrobbleEpisode(SyncShow show, int? season, int? number, double progress, MediaStatus status, string userToken)
+        {
+            var body = new ScrobbleEpisodeBody
+            {
+                progress = progress,
+                show = show,
+                episode = new ScrobbleEpisodeRef { season = season, number = number }
+            };
+            return PostAsync<ScrobbleResponse>(ScrobbleUrl(status), userToken, body);
+        }
+
+        /* ---------------------------------------------------------------- */
+        /*  HISTORY  (mark watched / unwatched)                            */
+        /* ---------------------------------------------------------------- */
+        public Task<SyncHistoryResponse> AddToHistory(SyncPayload payload, string userToken)
+            => PostAsync<SyncHistoryResponse>("/sync/history", userToken, payload);
+
+        public Task<SyncHistoryResponse> RemoveFromHistory(SyncPayload payload, string userToken)
+            => PostAsync<SyncHistoryResponse>("/sync/history/remove", userToken, payload);
+
+        /* ---------------------------------------------------------------- */
+        /*  RATINGS                                                        */
+        /* ---------------------------------------------------------------- */
+        public Task<object> AddRatings(SyncPayload payload, string userToken)
+            => PostAsync<object>("/sync/ratings", userToken, payload);
+
+        /* ---------------------------------------------------------------- */
+        /*  WATCHLISTS  (plan to watch, completed, ...)                    */
+        /* ---------------------------------------------------------------- */
+        public Task<object> AddToList(SyncPayload payload, string userToken)
+            => PostAsync<object>("/sync/add-to-list", userToken, payload);
+
+        /* ---------------------------------------------------------------- */
+        /*  READ  (import from Simkl)                                      */
+        /* ---------------------------------------------------------------- */
+        /// <summary>type = "movies" | "shows" | "anime".</summary>
+        public Task<AllItemsResponse> GetAllItems(string type, string userToken)
+        {
+            string uri = string.Format("/sync/all-items/{0}/?extended=full&episode_watched_at=yes", type);
+            return GetAsync<AllItemsResponse>(uri, userToken);
+        }
+
+        /// <summary>type = "movies" | "episodes" (empty for both).</summary>
+        public Task<List<PlaybackSession>> GetPlayback(string type, string userToken)
+        {
+            string uri = string.IsNullOrEmpty(type) ? "/sync/playback/" : string.Format("/sync/playback/{0}/", type);
+            return GetAsync<List<PlaybackSession>>(uri, userToken);
+        }
+
+        /* ---------------------------------------------------------------- */
+        /*  FILENAME FALLBACK (Simkl-specific bonus)                       */
+        /* ---------------------------------------------------------------- */
+        public async Task<SearchFileResponse> getFromFile(string filename)
+        {
+            SimklFile f = new SimklFile { file = filename };
             _logger.Info("Posting: " + _json.SerializeToString(f));
             StreamReader r = new StreamReader(await _post("/search/file/", null, f));
             string t = r.ReadToEnd();
@@ -92,108 +165,63 @@ namespace Simkl.Api
             return _json.DeserializeFromString<SearchFileResponse>(t);
         }
 
-        private static SimklHistory createHistoryFromItem(BaseItemDto item) {
-            SimklHistory history = new SimklHistory();
-
-            if (item.IsMovie == true || item.Type == "Movie") {
-                history.movies.Add(new SimklMovie(item));
-            } else if (item.IsSeries == true || (item.Type == "Episode" && !item.ProviderIds.ContainsKey("Tvdb"))) {
-                // TODO: TV Shows scrobbling (WIP)
-                history.shows.Add(new SimklShow(item));
-            } else if (item.Type == "Episode"){
-                history.episodes.Add(new SimklEpisode(item));
-            }
-
-            return history;
-        }
-
-        public async Task<(SimklHistory history, BaseItemDto item)> getHistoryFromFileName(BaseItemDto item, bool fullpath = true) {
-            string fname = fullpath?item.Path:Path.GetFileName(item.Path);
-            SearchFileResponse mo = await getFromFile(fname);
-
-            SimklHistory history = new SimklHistory();
-            if (item.IsMovie == true || item.Type == "Movie") {
-                if (mo.type != "movie") throw new InvalidDataException("type != movie (" + mo.type + ")");
-                item.Name = mo.movie.title;
-                item.ProductionYear = mo.movie.year;
-                history.movies.Add(mo.movie);
-            } else if (item.IsSeries == true || item.Type == "Episode") {
-                if (mo.type != "episode") throw new InvalidDataException("type != episode (" + mo.type + ")");
-                item.Name = mo.episode.title;
-                item.SeriesName = mo.show.title;
-                item.IndexNumber = mo.episode.episode;
-                item.ParentIndexNumber = mo.episode.season;
-                item.ProductionYear = mo.show.year;
-                history.episodes.Add(mo.episode);
-            }
-
-            return (history, item);
-        }
-
-        /* NOW EVERYTHING RELATED TO SCROBBLING */
-        public async Task<(bool success, BaseItemDto item)> markAsWatched(BaseItemDto item, string userToken)
+        /* ---------------------------------------------------------------- */
+        /*  LOW LEVEL                                                      */
+        /* ---------------------------------------------------------------- */
+        private async Task<T> PostAsync<T>(string url, string userToken, object data)
         {
-            SimklHistory history = createHistoryFromItem(item);
-            SyncHistoryResponse r = await SyncHistoryAsync(history, userToken);
-            _logger.Debug("Response: " + _json.SerializeToString(r));
-            if (history.movies.Count == r.added.movies && history.shows.Count == r.added.shows) return (true, item);
-
-            // If we are here, is because the item has not been found
-            // let's try scrobbling from full path
-            try {
-                (history, item) = await getHistoryFromFileName(item, true);
-            } catch (InvalidDataException) {
-                // Let's try again but this time using only the FILE name
-                _logger.Debug("Couldn't scrobble using full path, trying using only filename");
-                (history, item) = await getHistoryFromFileName(item, false);
+            try
+            {
+                _logger.Debug("POST {0} : {1}", url, _json.SerializeToString(data));
+                return Deserialize<T>(await ReadAll(await _post(url, userToken, data)));
             }
-
-            r = await SyncHistoryAsync(history, userToken);
-            _logger.Debug("Response: " + _json.SerializeToString(r));
-
-            return (history.movies.Count == r.added.movies && history.shows.Count == r.added.shows, item);
-        }
-
-        /// <summary>
-        /// Implements /sync/history method from simkl
-        /// </summary>
-        /// <param name="history">History object</param>
-        /// <param name="userToken">User token</param>
-        /// <returns></returns>
-        public async Task<SyncHistoryResponse> SyncHistoryAsync(SimklHistory history, string userToken)
-        {
-            try {
-                _logger.Info("Syncing History: " + _json.SerializeToString(history));
-                return _json.DeserializeFromStream<SyncHistoryResponse>(await _post("/sync/history", userToken, history));
-            } catch (MediaBrowser.Model.Net.HttpException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
-                _logger.Error("Invalid user token " + userToken + ", deleting");
+            catch (MediaBrowser.Model.Net.HttpException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _logger.Error("Invalid user token, deleting");
                 Plugin.Instance.deleteUserToken(userToken);
-                throw new InvalidTokenException("Invalid user token " + userToken);
+                throw new InvalidTokenException("Invalid user token");
             }
         }
 
+        private async Task<T> GetAsync<T>(string url, string userToken)
+        {
+            try
+            {
+                return Deserialize<T>(await ReadAll(await _get(url, userToken)));
+            }
+            catch (MediaBrowser.Model.Net.HttpException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _logger.Error("Invalid user token, deleting");
+                Plugin.Instance.deleteUserToken(userToken);
+                throw new InvalidTokenException("Invalid user token");
+            }
+        }
+
+        private static async Task<string> ReadAll(Stream stream)
+        {
+            if (stream == null) return null;
+            using (var reader = new StreamReader(stream))
+                return await reader.ReadToEndAsync().ConfigureAwait(false);
+        }
+
         /// <summary>
-        /// API's private get method, given RELATIVE url and headers
+        /// Deserializes a response, tolerating empty bodies and the literal "null"
+        /// that Simkl returns for empty lists (which would otherwise throw).
         /// </summary>
-        /// <param name="url">Relative url</param>
-        /// <param name="userToken">Authentication token</param>
-        /// <returns>HTTP(s) Stream to be used</returns>
+        private T Deserialize<T>(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body) || body.Trim() == "null")
+                return default(T);
+            return _json.DeserializeFromString<T>(body);
+        }
+
         private async Task<Stream> _get(string url, string userToken = null)
         {
-            // Todo: If string is not null neither empty
             HttpRequestOptions options = GetOptions(userToken);
             options.Url = BASE_URL + url;
-
             return await _httpClient.Get(options).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// API's private post method
-        /// </summary>
-        /// <param name="url">Relative post url</param>
-        /// <param name="data">Object to serialize</param>
-        /// <param name="userToken">Authentication token</param>
-        /// <returns></returns>
         private async Task<Stream> _post(string url, string userToken = null, object data = null)
         {
             HttpRequestOptions options = GetOptions(userToken);
