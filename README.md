@@ -1,6 +1,6 @@
 # Simkl pour Emby — édition « parité Trakt »
 
-[![license](https://img.shields.io/github/license/Guiro28/Emby.svg?style=flat-square)][license]
+[![license](https://img.shields.io/github/license/Guiro28/Simkl-Emby.svg?style=flat-square)][license]
 
 Plugin de suivi **Simkl** pour **Emby**. C'est un fork du plugin officiel
 [SIMKL/Emby](https://github.com/SIMKL/Emby), étendu pour offrir **les mêmes
@@ -48,7 +48,7 @@ plugin : **aucune application développeur à créer**.
 ## Installation
 
 ### Depuis la release (recommandé)
-1. Télécharger `Simkl.dll` depuis la [dernière release](https://github.com/Guiro28/Emby/releases).
+1. Télécharger `Simkl.dll` depuis la [dernière release](https://github.com/Guiro28/Simkl-Emby/releases).
 2. Le copier dans le dossier des plugins Emby :
    - **Windows** : `%AppData%\Emby-Server\programdata\plugins\`
    - **Linux** : `/var/lib/emby/plugins/`
@@ -177,7 +177,7 @@ Endpoints Simkl utilisés : `/oauth/pin`, `/scrobble/{start,pause,stop}`,
 - Modèle de fonctionnalités : [Trakt pour Emby](https://github.com/MediaBrowser/trakt).
 
 ## Liens
-- Bugs & demandes : https://github.com/Guiro28/Emby/issues
+- Bugs & demandes : https://github.com/Guiro28/Simkl-Emby/issues
 - Simkl : https://simkl.com/ · Discord Simkl : https://discord.gg/JRtwsfG
 
-[license]: https://github.com/Guiro28/Emby/blob/master/LICENSE
+[license]: https://github.com/Guiro28/Simkl-Emby/blob/master/LICENSE
