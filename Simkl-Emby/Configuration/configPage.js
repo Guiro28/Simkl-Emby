@@ -70,7 +70,9 @@ function ($, loading) {
             });
 
             var excluded = uconfig.locationsExcluded || [];
-            ApiClient.getVirtualFolders(uconfig.guid).then(function (folders) {
+            // Library folders are server-wide: call without a userId (the user-scoped
+            // route returns 404 on recent Emby versions).
+            ApiClient.getVirtualFolders().then(function (folders) {
                 var html = "";
                 (folders || []).forEach(function (vf) {
                     (vf.Locations || []).forEach(function (loc) {
@@ -83,6 +85,10 @@ function ($, loading) {
                 });
                 view.querySelector("#divSimklLocations").innerHTML =
                     html || "<div class='fieldDescription'>No library folders found.</div>";
+            }).catch(function (e) {
+                console.log("Simkl: getVirtualFolders failed", e);
+                view.querySelector("#divSimklLocations").innerHTML =
+                    "<div class='fieldDescription'>Could not load library folders.</div>";
             });
         }
 
