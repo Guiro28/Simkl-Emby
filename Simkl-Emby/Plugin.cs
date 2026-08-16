@@ -41,6 +41,21 @@ namespace Simkl
                 {
                     Name = "simkljs",
                     EmbeddedResourcePath = "Simkl.Configuration.configPage.js"
+                },
+                // Self-service page shown in every user's preferences (Emby 4.9+).
+                new PluginPageInfo
+                {
+                    Name = "SimklUser",
+                    EnableInMainMenu = true,
+                    EnableInUserMenu = true,
+                    DisplayName = "Simkl",
+                    MenuIcon = "live_tv",
+                    EmbeddedResourcePath = "Simkl.Configuration.userPage.html"
+                },
+                new PluginPageInfo
+                {
+                    Name = "simkluserjs",
+                    EmbeddedResourcePath = "Simkl.Configuration.userPage.js"
                 }
             };
 

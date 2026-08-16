@@ -70,19 +70,23 @@ function ($, loading) {
             });
 
             var excluded = uconfig.locationsExcluded || [];
-            ApiClient.getVirtualFolders(uconfig.guid).then(function (folders) {
+            // Folder list comes from the plugin (server-side): reliable and avoids the
+            // admin-only / user-scoped ApiClient.getVirtualFolders quirks.
+            ApiClient.getJSON(ApiClient.getUrl("Simkl/folders")).then(function (res) {
                 var html = "";
-                (folders || []).forEach(function (vf) {
-                    (vf.Locations || []).forEach(function (loc) {
-                        var checked = excluded.some(function (x) {
-                            return x && x.toLowerCase() === loc.toLowerCase();
-                        }) ? 'checked="checked"' : '';
-                        html += '<label class="emby-checkbox-label"><input is="emby-checkbox" type="checkbox" class="chkSimklLocation" data-mini="true" value="' +
-                            loc + '" ' + checked + ' /><span>' + loc + '</span></label>';
-                    });
+                ((res && res.folders) || []).forEach(function (loc) {
+                    var checked = excluded.some(function (x) {
+                        return x && x.toLowerCase() === loc.toLowerCase();
+                    }) ? 'checked="checked"' : '';
+                    html += '<label class="emby-checkbox-label"><input is="emby-checkbox" type="checkbox" class="chkSimklLocation" data-mini="true" value="' +
+                        loc + '" ' + checked + ' /><span>' + loc + '</span></label>';
                 });
                 view.querySelector("#divSimklLocations").innerHTML =
                     html || "<div class='fieldDescription'>No library folders found.</div>";
+            }).catch(function (e) {
+                console.log("Simkl: folders load failed", e);
+                view.querySelector("#divSimklLocations").innerHTML =
+                    "<div class='fieldDescription'>Could not load library folders.</div>";
             });
         }
 

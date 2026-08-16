@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyVersion>2.0.1.0</AssemblyVersion>
+    <FileVersion>2.0.1.0</FileVersion>
     <Authors>David Davó; feature-parity fork</Authors>
     <Company>Simkl</Company>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <NeutralLanguage>en-GB</NeutralLanguage>
     <RepositoryUrl>https://github.com/SIMKL/Emby</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -17,20 +17,23 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="MediaBrowser.Server.Core" Version="4.7.7" />
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+    <PackageReference Include="MediaBrowser.Server.Core" Version="4.9.1.90" />
+    <PackageReference Include="System.Memory" Version="4.6.0" />
   </ItemGroup>
   
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
     <None Remove="Configuration\configPage.js" />
+    <None Remove="Configuration\userPage.html" />
+    <None Remove="Configuration\userPage.js" />
     <None Remove="emby_thumb.jpg" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
     <EmbeddedResource Include="Configuration\configPage.js" />
+    <EmbeddedResource Include="Configuration\userPage.html" />
+    <EmbeddedResource Include="Configuration\userPage.js" />
     <EmbeddedResource Include="emby_thumb.jpg" />
   </ItemGroup>
   
