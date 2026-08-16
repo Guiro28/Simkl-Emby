@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simkl</title>
+</head>
+<body>
+    <div id="SimklUserPage" data-role="page" class="page type-interior pluginConfigurationPage"
+         data-controller="__plugin/simkluserjs">
+        <div data-role="content">
+            <div class="content-primary">
+                <h1>Simkl</h1>
+
+                <div id="suLoginContainer" style="display:none; margin-top:1.5em;">
+                    <p style="margin-bottom:1.25em; opacity:.85;">Connect your Simkl account to sync your watched movies and shows across your devices.</p>
+                    <button id="suLogin" is="emby-button" type="button" class="raised button-submit" style="display:inline-block; width:auto; margin:0 .75em .5em 0;"><span>Log in with Simkl</span></button>
+                    <button id="suCreate" is="emby-button" type="button" class="raised" style="display:inline-block; width:auto; margin:0 0 .5em;"><span>Create an account</span></button>
+                </div>
+
+                <div id="suLoggingIn" style="display:none;">
+                    <h2>Logging In</h2>
+                    <div id="suLoginText"></div>
+                    <h3 id="suLoginPin"></h3>
+                    <span id="suSeconds">900</span> seconds remaining
+                    <button id="suCancel" is="emby-button" type="button" class="raised button-cancel block"><span>Cancel</span></button>
+                </div>
+
+                <form id="SimklUserForm" style="display:none;">
+                    <h3>Hello <span id="suName">USERNAME</span>!</h3>
+                    <button id="suLogout" is="emby-button" type="button" class="raised block"><span>Log Out</span></button>
+
+                    <h2>Real-time scrobbling</h2>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="scrobbleMovies" /><span>Scrobble Movies</span></label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="scrobbleShows" /><span>Scrobble TV Shows &amp; Anime</span></label>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="scr_pct" type="number" min="0" max="100" pattern="[0-9]*" label="Watched threshold (%):" />
+                    </div>
+
+                    <h2>Library sync (scheduled tasks)</h2>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="postWatchedHistory" /><span>Export watched status to Simkl</span></label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="importPlaybackProgress" /><span>Import resume points from Simkl</span></label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="syncRatings" /><span>Sync ratings (movies &amp; shows)</span></label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="syncWatchlist" /><span>Add unseen library items to "Plan to watch"</span></label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="skipUnwatchedImportFromSimkl" /><span>Don't mark items unwatched locally when unseen on Simkl</span></label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label><input is="emby-checkbox" type="checkbox" id="extraLogging" /><span>Extra logging</span></label>
+                    </div>
+
+                    <h3 class="checkboxListLabel">Excluded library folders:</h3>
+                    <div class="fieldDescription">Items inside a checked folder are ignored (not synced).</div>
+                    <div id="suLocations" class="paperList checkboxList checkboxList-paperList"></div>
+
+                    <br />
+                    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -58,7 +58,7 @@ namespace Simkl.Helpers
 
             if (config.locationsExcluded != null && fileSystem != null &&
                 config.locationsExcluded.Any(s =>
-                    !string.IsNullOrWhiteSpace(s) && fileSystem.ContainsSubPath(s.AsSpan(), item.Path.AsSpan())))
+                    !string.IsNullOrWhiteSpace(s) && fileSystem.ContainsSubPath(s, item.Path)))
                 return false;
 
             if (item is Movie movie)

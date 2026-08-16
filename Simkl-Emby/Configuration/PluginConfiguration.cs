@@ -20,6 +20,20 @@ namespace Simkl.Configuration
             return userConfigs?.FirstOrDefault(c => c.guid == guid);
         }
 
+        /// <summary>Returns the config for this Emby user id, creating it if missing.</summary>
+        public UserConfig GetOrCreate(string guid)
+        {
+            var cfg = getByGuid(guid);
+            if (cfg == null)
+            {
+                cfg = new UserConfig { guid = guid };
+                var list = (userConfigs ?? new UserConfig[] { }).ToList();
+                list.Add(cfg);
+                userConfigs = list.ToArray();
+            }
+            return cfg;
+        }
+
         /// <summary>All users that are currently logged in to Simkl.</summary>
         public UserConfig[] LoggedInUsers()
         {
